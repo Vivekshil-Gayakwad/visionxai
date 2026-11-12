@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePatients } from '../context/PatientContext';
+import { getPublicReportUrl } from '../lib/api';
 import { 
   Eye, 
   Printer, 
@@ -139,8 +140,8 @@ export function PublicReportView({ patientId, onBack }) {
   const doctorQual = doc?.doctorQualification || 'MS (Ophthalmology)';
   const doctorHosp = patient.hospitalName || doc?.doctorOrganization || 'District Tele-Ophthalmology Hospital';
 
-  // Live clickable and scannable report URL
-  const reportUrl = typeof window !== 'undefined' ? `${window.location.origin}/?report=${patientId}` : `https://visionxai.org/?report=${patientId}`;
+  // Live clickable and scannable report URL (resolves to public deployed domain even on localhost)
+  const reportUrl = getPublicReportUrl(patientId);
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(reportUrl)}`;
 
   const handleCopyLink = () => {

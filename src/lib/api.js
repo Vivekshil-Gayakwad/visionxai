@@ -9,6 +9,40 @@ const API_BASE = import.meta.env.VITE_API_URL !== undefined
   ? import.meta.env.VITE_API_URL 
   : '';
 
+/**
+ * Generates a globally accessible public report URL.
+ * If running locally on localhost, it automatically resolves to the deployed production domain
+ * (or VITE_PUBLIC_URL) so links and QR codes sent to patients' phones can actually be opened!
+ */
+export function getPublicReportUrl(patientId, customOrigin = null) {
+  if (customOrigin && typeof customOrigin === 'string' && customOrigin.trim()) {
+    return `${customOrigin.trim().replace(/\/$/, '')}/?report=${patientId}`;
+  }
+
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    // When running on a live deployed domain (Render, custom domain, etc.)
+    if (!origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+      return `${origin}/?report=${patientId}`;
+    }
+  }
+
+  // When testing on localhost, route to deployed Render URL or VITE_PUBLIC_URL
+  const configured = (
+    import.meta.env.VITE_PUBLIC_URL ||
+    import.meta.env.VITE_API_URL ||
+    'https://visionxai.onrender.com'
+  ).replace(/\/$/, '');
+
+  if (!configured.includes('localhost') && !configured.includes('127.0.0.1')) {
+    return `${configured}/?report=${patientId}`;
+  }
+
+  return typeof window !== 'undefined'
+    ? `${window.location.origin}/?report=${patientId}`
+    : `https://visionxai.onrender.com/?report=${patientId}`;
+}
+
 /** Helper: check if backend is available */
 let _backendOnline = null;
 let _lastCheck = 0;

@@ -787,10 +787,14 @@ def view_patient_report_html(patient_id: str, request: Request):
         doc_license = doc_report.get("doctor_license") or "MCI-REG-44912"
     doc_hospital = patient.get("hospital_name") or doc_report.get("doctor_hospital") or "District Tele-Ophthalmology Hospital"
 
-    # Generate real scannable QR Code URL
+    # Generate real scannable QR Code URL (resolves to public deployed domain even on localhost)
     host_header = request.headers.get("host", "localhost:8000")
-    scheme = "https" if request.headers.get("x-forwarded-proto") == "https" or not ("localhost" in host_header or "127.0.0.1" in host_header) else "http"
-    live_report_url = f"{scheme}://{host_header}/?report={patient_id}"
+    if "localhost" in host_header or "127.0.0.1" in host_header:
+        public_base = os.environ.get("PUBLIC_URL", "https://visionxai.onrender.com").rstrip("/")
+        live_report_url = f"{public_base}/?report={patient_id}"
+    else:
+        scheme = "https" if request.headers.get("x-forwarded-proto") == "https" or not ("localhost" in host_header or "127.0.0.1" in host_header) else "http"
+        live_report_url = f"{scheme}://{host_header}/?report={patient_id}"
     qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={live_report_url}"
     
     rx_items = ""

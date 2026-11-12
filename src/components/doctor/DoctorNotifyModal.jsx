@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePatients } from '../../context/PatientContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { getPublicReportUrl } from '../../lib/api';
 import { 
   X, 
   MessageSquare, 
@@ -9,7 +10,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Copy,
-  Check
+  Check,
+  Globe
 } from 'lucide-react';
 
 export function DoctorNotifyModal({ patient, onClose }) {
@@ -27,8 +29,8 @@ export function DoctorNotifyModal({ patient, onClose }) {
   // Clean phone number for WhatsApp
   const cleanPhone = (patient.mobile || '').replace(/\D/g, '');
 
-  // Directly clickable verified medical report link
-  const reportUrl = `${window.location.origin}/?report=${patient.id}`;
+  // Directly clickable verified medical report link (Intelligently resolves to public domain even on localhost)
+  const reportUrl = getPublicReportUrl(patient.id);
 
   const whatsappMessage = 
 `*VisionXAI Tele-Ophthalmology Screening Report*

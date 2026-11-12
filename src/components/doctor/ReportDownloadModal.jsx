@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { getPublicReportUrl } from '../../lib/api';
 import { 
   X, 
   Printer, 
@@ -21,8 +22,8 @@ export function ReportDownloadModal({ patient, onClose }) {
   const doctorQual = patient.doctorReport?.doctorQualification || currentUser?.qualification || 'MS (Ophthalmology)';
   const doctorHosp = patient.hospitalName || patient.doctorReport?.doctorOrganization || currentUser?.currentOrganization || 'District Tele-Ophthalmology Hospital';
 
-  // Live clickable and scannable report link
-  const reportUrl = typeof window !== 'undefined' ? `${window.location.origin}/?report=${patient.id}` : `https://visionxai.org/?report=${patient.id}`;
+  // Live clickable and scannable report link (resolves to public deployed domain even on localhost)
+  const reportUrl = getPublicReportUrl(patient.id);
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(reportUrl)}`;
 
   const handlePrint = () => {
