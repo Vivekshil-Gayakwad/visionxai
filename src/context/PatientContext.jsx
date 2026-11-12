@@ -15,13 +15,32 @@ import {
 
 const PatientContext = createContext();
 
+// Helper: automatically migrate legacy doctor names to current doctor
+function sanitizePatientDoctor(p) {
+  if (!p) return p;
+  let doc = p.doctorReport;
+  if (doc) {
+    let name = doc.doctorName || doc.reviewedByDoctor || '';
+    if (name.includes('Arvind') || !name) {
+      doc = {
+        ...doc,
+        doctorName: 'Dr. Vivek Gayakwad, MS',
+        reviewedByDoctor: `Dr. Vivek Gayakwad, MS (${doc.doctorLicense || 'MCI-REG-44912'})`
+      };
+    }
+  }
+  return { ...p, doctorReport: doc };
+}
+
 export function PatientProvider({ children }) {
   const [patients, setPatients] = useState(() => {
     const saved = localStorage.getItem('visionxai_patients_v2');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.map(sanitizePatientDoctor);
+        }
       } catch (e) {
         console.error('Failed to parse cached patients', e);
       }
@@ -42,7 +61,7 @@ export function PatientProvider({ children }) {
     try {
       const data = await fetchPatients();
       if (Array.isArray(data)) {
-        setPatients(data);
+        setPatients(data.map(sanitizePatientDoctor));
         setBackendConnected(true);
       }
     } catch (err) {
