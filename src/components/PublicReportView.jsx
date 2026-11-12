@@ -6,17 +6,20 @@ import {
   Download, 
   ArrowLeft, 
   CheckCircle2, 
-  QrCode, 
   Clock, 
   ShieldCheck,
   Building,
-  User
+  User,
+  Copy,
+  Check,
+  ExternalLink
 } from 'lucide-react';
 
 export function PublicReportView({ patientId, onBack }) {
   const { patients } = usePatients();
   const [patient, setPatient] = useState(null);
   const [downloaded, setDownloaded] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,8 +31,11 @@ export function PublicReportView({ patientId, onBack }) {
       return;
     }
 
-    // 2. Fetch from backend API if not in context
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    // 2. Fetch from backend API (relative to current origin in production)
+    const API_BASE = import.meta.env.VITE_API_URL !== undefined 
+      ? import.meta.env.VITE_API_URL 
+      : '';
+
     fetch(`${API_BASE}/api/patients/${patientId}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -127,6 +133,22 @@ export function PublicReportView({ patientId, onBack }) {
   const doc = patient.doctorReport || null;
   const asha = patient.ashaRiskAssessment || {};
 
+  // Dynamic doctor details
+  const doctorName = doc?.doctorName || doc?.reviewedByDoctor || doc?.doctor_name || 'Dr. Arvind Mehra, MS';
+  const doctorLicense = doc?.doctorLicense || doc?.doctor_license || 'MCI-REG-44912';
+  const doctorQual = doc?.doctorQualification || 'MS (Ophthalmology)';
+  const doctorHosp = patient.hospitalName || doc?.doctorOrganization || 'District Tele-Ophthalmology Hospital';
+
+  // Live clickable and scannable report URL
+  const reportUrl = typeof window !== 'undefined' ? `${window.location.origin}/?report=${patientId}` : `https://visionxai.org/?report=${patientId}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(reportUrl)}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(reportUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
   return (
     <div className="min-h-screen bg-[#082733] py-8 px-3 sm:px-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -135,13 +157,21 @@ export function PublicReportView({ patientId, onBack }) {
         <div className="bg-[#073B4C] border border-[#0F5E78] p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-md print:hidden">
           <button
             onClick={onBack}
-            className="px-3 py-1.5 rounded-xl bg-[#052631] hover:bg-[#0F5E78] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 rounded-xl bg-[#052631] hover:bg-[#0F5E78] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>VisionXAI Portal Home</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleCopyLink}
+              className="px-3.5 py-2 rounded-xl bg-[#052631] hover:bg-[#0F5E78] border border-[#0F5E78] text-[#FFD166] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              <span>{copiedLink ? 'Link Copied!' : 'Copy Sendable Link'}</span>
+            </button>
+
             <button
               onClick={handleDownload}
               className="px-3.5 py-2 rounded-xl bg-[#052631] hover:bg-[#0F5E78] border border-[#0F5E78] text-[#FFD166] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -285,26 +315,39 @@ export function PublicReportView({ patientId, onBack }) {
             </div>
           </div>
 
-          {/* Signatures & QR Code Footer */}
+          {/* Signatures & Real Scannable QR Code Footer */}
           <div className="pt-6 border-t border-slate-200 flex items-end justify-between gap-4 text-xs">
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-300 p-1 flex items-center justify-center">
-                <QrCode className="w-14 h-14 text-slate-700" />
-              </div>
+              <a 
+                href={reportUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                title="Click or scan to open live digital dossier"
+                className="group relative"
+              >
+                <img 
+                  src={qrCodeUrl} 
+                  alt={`QR Code for Patient ${patientId}`} 
+                  className="w-16 h-16 rounded-lg bg-white border border-slate-300 p-0.5 object-contain shadow-sm group-hover:scale-105 transition-transform"
+                />
+              </a>
               <div className="space-y-0.5 text-[11px] text-slate-500">
                 <p className="font-bold text-slate-700">Digital Health Record</p>
-                <p>Verified on VisionXAI Tele-Care</p>
-                <p className="text-[#073B4C] font-mono">{window.location.host}</p>
+                <p>Scan with any phone camera</p>
+                <a href={reportUrl} target="_blank" rel="noopener noreferrer" className="text-[#073B4C] font-mono hover:underline flex items-center gap-1 font-semibold">
+                  <span>Verify Live Dossier</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
               </div>
             </div>
 
-            <div className="text-right space-y-1">
-              <div className="font-serif italic text-[#073B4C] text-base font-bold">
-                {doc?.doctor_name || 'Dr. Arvind Mehra, MS'}
+            <div className="text-right space-y-0.5">
+              <div className="font-serif italic text-[#073B4C] text-lg font-bold">
+                {doctorName}
               </div>
-              <p className="text-slate-800 font-bold text-xs">{doc?.doctor_name || 'Dr. Arvind Mehra, MS (Ophthalmology)'}</p>
-              <p className="text-slate-500 text-[11px]">MCI Reg No: MCI-REG-44912</p>
-              <p className="text-slate-500 text-[10px]">Apex Tele-Ophthalmology Consultant</p>
+              <p className="text-slate-800 font-bold text-xs">{doctorName}, {doctorQual}</p>
+              <p className="text-slate-600 text-[11px] font-mono">Reg No: {doctorLicense}</p>
+              <p className="text-slate-500 text-[10px]">{doctorHosp}</p>
             </div>
           </div>
 

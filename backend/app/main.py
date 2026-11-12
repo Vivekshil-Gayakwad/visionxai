@@ -13,7 +13,7 @@ import json
 import base64
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -132,6 +132,8 @@ class DoctorReportRequest(BaseModel):
     health_status: Optional[str] = "active"
     follow_up_date: Optional[str] = None
     doctor_name: Optional[str] = "Consulting Ophthalmologist"
+    doctor_license: Optional[str] = "MCI-REG-44912"
+    doctor_hospital: Optional[str] = ""
 
 class FundusScanRequest(BaseModel):
     image_url: str
@@ -720,6 +722,8 @@ def save_doctor_clinical_report(patient_id: str, req: DoctorReportRequest):
         "health_status": req.health_status,
         "follow_up_date": req.follow_up_date,
         "doctor_name": req.doctor_name,
+        "doctor_license": req.doctor_license,
+        "doctor_hospital": req.doctor_hospital,
         "pdf_report_url": f"/reports/{patient_id}_report.pdf"
     }
 
@@ -756,7 +760,7 @@ def delete_patient_record(patient_id: str):
 # PUBLIC REPORT VIEWER & DOWNLOAD ENDPOINT
 # -----------------------------------------------------------------------------
 @app.get("/report/{patient_id}", response_class=HTMLResponse)
-def view_patient_report_html(patient_id: str):
+def view_patient_report_html(patient_id: str, request: Request):
     patient = db.get_patient(patient_id)
     if not patient:
         return HTMLResponse(
@@ -772,6 +776,22 @@ def view_patient_report_html(patient_id: str):
     asha_risk = patient.get("ashaRiskAssessment") or {}
     fundus = patient.get("fundusImaging") or {}
     doc_report = patient.get("doctorReport") or {}
+
+    # Extract dynamic doctor details
+    raw_doc_name = doc_report.get("doctor_name") or doc_report.get("reviewedByDoctor") or "Dr. Arvind Mehra, MS"
+    if "(" in raw_doc_name and ")" in raw_doc_name:
+        doc_display_name = raw_doc_name.split("(")[0].strip()
+        doc_license = raw_doc_name.split("(")[1].split(")")[0].strip()
+    else:
+        doc_display_name = raw_doc_name
+        doc_license = doc_report.get("doctor_license") or "MCI-REG-44912"
+    doc_hospital = patient.get("hospital_name") or doc_report.get("doctor_hospital") or "District Tele-Ophthalmology Hospital"
+
+    # Generate real scannable QR Code URL
+    host_header = request.headers.get("host", "localhost:8000")
+    scheme = "https" if request.headers.get("x-forwarded-proto") == "https" or not ("localhost" in host_header or "127.0.0.1" in host_header) else "http"
+    live_report_url = f"{scheme}://{host_header}/?report={patient_id}"
+    qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={live_report_url}"
     
     rx_items = ""
     rx_list = doc_report.get("prescriptions", [])
@@ -897,16 +917,23 @@ def view_patient_report_html(patient_id: str):
     <ul>{rx_items}</ul>
   </div>
 
-  <div class="footer">
-    <div style="font-size: 11px; color: #64748b;">
-      <p style="margin: 0; font-weight: bold; color: #073B4C;">Digitally Verified Tele-Health Dossier</p>
-      <p style="margin: 2px 0 0;">VisionXAI Apex Clinical Network • Accredited Tele-Ophthalmology</p>
+  <div class="footer" style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 18px; border-top: 1px solid #e2e8f0; margin-top: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <a href="{live_report_url}" target="_blank" title="Scan or click to open live verified report">
+        <img src="{qr_code_url}" alt="QR Verification" style="width: 72px; height: 72px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; background: white;" />
+      </a>
+      <div style="font-size: 11px; color: #64748b;">
+        <p style="margin: 0; font-weight: bold; color: #073B4C;">Digitally Verified Tele-Health Dossier</p>
+        <p style="margin: 2px 0 0;">Scan with camera or <a href="{live_report_url}" target="_blank" style="color: #073B4C; font-weight: bold; text-decoration: underline;">Open Live Web Report</a></p>
+        <p style="margin: 2px 0 0; font-family: monospace; font-size: 10px;">ID: {patient.get('id')}</p>
+      </div>
     </div>
     <div style="text-align: right;">
       <p style="margin: 0; font-family: serif; font-style: italic; font-size: 16px; font-weight: bold; color: #073B4C;">
-        {doc_report.get('doctor_name') or 'Dr. Arvind Mehra, MS'}
+        {doc_display_name}
       </p>
-      <p style="margin: 2px 0 0; font-size: 11px; color: #64748b;">Consulting Retinal Specialist • MCI-REG-44912</p>
+      <p style="margin: 2px 0 0; font-size: 11px; color: #334155; font-weight: 600;">Reg No: {doc_license}</p>
+      <p style="margin: 2px 0 0; font-size: 10px; color: #64748b;">{doc_hospital}</p>
     </div>
   </div>
 </div>

@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { 
   X, 
   Printer, 
   Eye, 
-  QrCode,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
 
 export function ReportDownloadModal({ patient, onClose }) {
+  const { currentUser } = useAuth();
   const { t } = useLanguage();
   const [downloaded, setDownloaded] = useState(false);
+
+  // Dynamic doctor details
+  const doctorName = patient.doctorReport?.doctorName || currentUser?.name || currentUser?.fullName || 'Dr. Arvind Mehra, MS';
+  const doctorLicense = patient.doctorReport?.doctorLicense || currentUser?.licenseId || 'MCI-REG-44912';
+  const doctorQual = patient.doctorReport?.doctorQualification || currentUser?.qualification || 'MS (Ophthalmology)';
+  const doctorHosp = patient.hospitalName || patient.doctorReport?.doctorOrganization || currentUser?.currentOrganization || 'District Tele-Ophthalmology Hospital';
+
+  // Live clickable and scannable report link
+  const reportUrl = typeof window !== 'undefined' ? `${window.location.origin}/?report=${patient.id}` : `https://visionxai.org/?report=${patient.id}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(reportUrl)}`;
 
   const handlePrint = () => {
     window.print();
@@ -224,27 +236,40 @@ export function ReportDownloadModal({ patient, onClose }) {
             </div>
           </div>
 
-          {/* Signatures & QR Code Footer */}
+          {/* Signatures & Real Scannable QR Code Footer */}
           <div className="pt-6 border-t border-slate-200 flex items-end justify-between gap-4 text-xs">
             
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-300 p-1 flex items-center justify-center">
-                <QrCode className="w-14 h-14 text-slate-700" />
-              </div>
+              <a 
+                href={reportUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                title="Click or scan to open live digital dossier"
+                className="group relative"
+              >
+                <img 
+                  src={qrCodeUrl} 
+                  alt={`QR Code for Patient ${patient.id}`} 
+                  className="w-16 h-16 rounded-lg bg-white border border-slate-300 p-0.5 object-contain shadow-sm group-hover:scale-105 transition-transform"
+                />
+              </a>
               <div className="space-y-0.5 text-[11px] text-slate-500">
                 <p className="font-bold text-slate-700">Digital Health Record</p>
-                <p>Scan to verify authenticity on</p>
-                <p className="text-[#073B4C] font-mono">visionxai.health.gov.in</p>
+                <p>Scan with any phone camera</p>
+                <a href={reportUrl} target="_blank" rel="noopener noreferrer" className="text-[#073B4C] font-mono hover:underline flex items-center gap-1 font-semibold">
+                  <span>Verify Live Dossier</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
               </div>
             </div>
 
-            <div className="text-right space-y-1">
-              <div className="font-serif italic text-[#073B4C] text-base font-bold">
-                Dr. Arvind Mehra, MS
+            <div className="text-right space-y-0.5">
+              <div className="font-serif italic text-[#073B4C] text-lg font-bold">
+                {doctorName}
               </div>
-              <p className="text-slate-800 font-bold text-xs">Dr. Arvind Mehra, MS (Ophthalmology)</p>
-              <p className="text-slate-500 text-[11px]">MCI Reg No: MCI-REG-44912</p>
-              <p className="text-slate-500 text-[10px]">Apex Tele-Ophthalmology Consultant</p>
+              <p className="text-slate-800 font-bold text-xs">{doctorName}, {doctorQual}</p>
+              <p className="text-slate-600 text-[11px] font-mono">Reg No: {doctorLicense}</p>
+              <p className="text-slate-500 text-[10px]">{doctorHosp}</p>
             </div>
 
           </div>

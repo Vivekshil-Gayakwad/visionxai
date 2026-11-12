@@ -178,6 +178,14 @@ def init_db():
         cursor.execute("ALTER TABLE profiles ADD COLUMN state TEXT DEFAULT 'Maharashtra'")
     except Exception:
         pass
+    try:
+        cursor.execute("ALTER TABLE dr_reports ADD COLUMN doctor_license TEXT DEFAULT 'MCI-REG-44912'")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE dr_reports ADD COLUMN doctor_hospital TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     # Seed Pre-Verified Registries (500 records)
     if VERIFIED_REGISTRIES_DATA:
@@ -356,6 +364,13 @@ def _format_patient_dict(row, cursor) -> Dict[str, Any]:
         except Exception:
             rx_list = [raw_rx] if raw_rx else []
 
+        raw_doc_name = rep_row["doctor_name"] or "Consulting Ophthalmologist"
+        doc_lic = rep_row["doctor_license"] if ("doctor_license" in rep_row.keys() and rep_row["doctor_license"]) else None
+        if not doc_lic and "(" in raw_doc_name and ")" in raw_doc_name:
+            doc_lic = raw_doc_name.split("(")[1].split(")")[0].strip()
+        doc_name_clean = raw_doc_name.split("(")[0].strip() if "(" in raw_doc_name else raw_doc_name
+        doc_hosp = rep_row["doctor_hospital"] if ("doctor_hospital" in rep_row.keys() and rep_row["doctor_hospital"]) else (p.get("hospital_name") or "District Tele-Ophthalmology Hospital")
+
         p["doctorReport"] = {
             "id": rep_row["id"],
             "diagnosis": rep_row["diagnosis"],
@@ -365,9 +380,10 @@ def _format_patient_dict(row, cursor) -> Dict[str, Any]:
             "prescriptions": rx_list,
             "healthStatus": rep_row["health_status"],
             "followUpDate": rep_row["follow_up_date"],
-            "doctorName": rep_row["doctor_name"],
-            "reviewedByDoctor": rep_row["doctor_name"],
-            "doctorLicense": "MCI-REG-44912",
+            "doctorName": doc_name_clean,
+            "reviewedByDoctor": raw_doc_name,
+            "doctorLicense": doc_lic or "MCI-REG-44912",
+            "doctorOrganization": doc_hosp,
             "pdfReportUrl": rep_row["pdf_report_url"],
             "createdAt": rep_row["created_at"],
             "reviewedAt": rep_row["created_at"]
@@ -570,24 +586,53 @@ def save_doctor_report(patient_id: str, report_data: Dict[str, Any]) -> Dict[str
     now = datetime.utcnow().isoformat()
     report_id = str(uuid.uuid4())
 
-    cursor.execute("""
-    INSERT INTO dr_reports (
-        id, patient_id, diagnosis, clinical_notes, prescriptions,
-        health_status, follow_up_date, doctor_name, pdf_report_url, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        report_id,
-        patient_id,
-        report_data.get("diagnosis", "No DR"),
-        report_data.get("clinical_notes", ""),
-        report_data.get("prescriptions", ""),
-        report_data.get("health_status", "active"),
-        report_data.get("follow_up_date"),
-        report_data.get("doctor_name", "Consulting Ophthalmologist"),
-        report_data.get("pdf_report_url"),
-        now,
-        now
-    ))
+    doc_raw = report_data.get("doctor_name", "Consulting Ophthalmologist")
+    doc_lic = report_data.get("doctor_license")
+    if not doc_lic and "(" in doc_raw and ")" in doc_raw:
+        doc_lic = doc_raw.split("(")[1].split(")")[0].strip()
+    doc_hosp = report_data.get("doctor_hospital", "")
+
+    try:
+        cursor.execute("""
+        INSERT INTO dr_reports (
+            id, patient_id, diagnosis, clinical_notes, prescriptions,
+            health_status, follow_up_date, doctor_name, doctor_license, doctor_hospital, pdf_report_url, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            report_id,
+            patient_id,
+            report_data.get("diagnosis", "No DR"),
+            report_data.get("clinical_notes", ""),
+            report_data.get("prescriptions", ""),
+            report_data.get("health_status", "active"),
+            report_data.get("follow_up_date"),
+            doc_raw,
+            doc_lic or "MCI-REG-44912",
+            doc_hosp,
+            report_data.get("pdf_report_url"),
+            now,
+            now
+        ))
+    except Exception:
+        # Fallback if older table schema without extra columns
+        cursor.execute("""
+        INSERT INTO dr_reports (
+            id, patient_id, diagnosis, clinical_notes, prescriptions,
+            health_status, follow_up_date, doctor_name, pdf_report_url, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            report_id,
+            patient_id,
+            report_data.get("diagnosis", "No DR"),
+            report_data.get("clinical_notes", ""),
+            report_data.get("prescriptions", ""),
+            report_data.get("health_status", "active"),
+            report_data.get("follow_up_date"),
+            doc_raw,
+            report_data.get("pdf_report_url"),
+            now,
+            now
+        ))
 
     # Update patient status to Diagnosed
     cursor.execute("UPDATE patients SET status = 'Diagnosed & Signed', updated_at = ? WHERE id = ?", (now, patient_id))

@@ -16,38 +16,29 @@ import { Footer } from './components/Footer';
 function MainLayout() {
   const [activeSection, setActiveSection] = useState('home');
 
-  // Detect direct report link from WhatsApp (e.g. ?report=VX-2026-XXXX or #/report/VX-2026-XXXX)
-  const [reportPatientId, setReportPatientId] = useState(() => {
+  // Detect direct report link from WhatsApp / URL (e.g. ?report=VX-2026-XXXX or #/report/VX-2026-XXXX or /report/VX-2026-XXXX)
+  const extractReportId = () => {
     try {
       const searchParams = new URLSearchParams(window.location.search);
       const q = searchParams.get('report');
       if (q) return q;
       if (window.location.hash.includes('report/')) {
         const parts = window.location.hash.split('report/');
-        if (parts[1]) return parts[1].split('?')[0];
+        if (parts[1]) return parts[1].split('?')[0].split('/')[0];
+      }
+      if (window.location.pathname.includes('/report/')) {
+        const parts = window.location.pathname.split('/report/');
+        if (parts[1]) return parts[1].split('?')[0].split('/')[0];
       }
     } catch {}
     return null;
-  });
+  };
+
+  const [reportPatientId, setReportPatientId] = useState(extractReportId);
 
   useEffect(() => {
     const handleUrlChange = () => {
-      try {
-        const searchParams = new URLSearchParams(window.location.search);
-        const q = searchParams.get('report');
-        if (q) {
-          setReportPatientId(q);
-          return;
-        }
-        if (window.location.hash.includes('report/')) {
-          const parts = window.location.hash.split('report/');
-          if (parts[1]) {
-            setReportPatientId(parts[1].split('?')[0]);
-            return;
-          }
-        }
-        setReportPatientId(null);
-      } catch {}
+      setReportPatientId(extractReportId());
     };
 
     window.addEventListener('popstate', handleUrlChange);
@@ -108,7 +99,13 @@ function MainLayout() {
           try {
             const url = new URL(window.location);
             url.searchParams.delete('report');
-            window.history.pushState({}, '', url.pathname);
+            if (url.pathname.includes('/report/')) {
+              url.pathname = '/';
+            }
+            if (url.hash.includes('report/')) {
+              url.hash = '';
+            }
+            window.history.pushState({}, '', url.pathname + url.search + url.hash);
           } catch {}
           setReportPatientId(null);
         }}

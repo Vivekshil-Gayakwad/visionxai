@@ -4,7 +4,10 @@
  * Falls back to client-side simulation if backend is unreachable.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use relative base URL if VITE_API_URL is unset, allowing same-origin API calls on deployed host
+const API_BASE = import.meta.env.VITE_API_URL !== undefined 
+  ? import.meta.env.VITE_API_URL 
+  : '';
 
 /** Helper: check if backend is available */
 let _backendOnline = null;
@@ -235,6 +238,10 @@ export async function removeFundus(patientId) {
  * Save doctor's clinical report
  */
 export async function saveDoctorReport(patientId, reportData, doctorUser) {
+  const docName = doctorUser?.name || doctorUser?.fullName || 'Consulting Ophthalmologist';
+  const docLic = doctorUser?.licenseId || doctorUser?.license_id || 'MCI-REG-44912';
+  const docHosp = doctorUser?.currentOrganization || '';
+
   return apiFetch(`/api/patients/${patientId}/report`, {
     method: 'POST',
     body: JSON.stringify({
@@ -245,9 +252,9 @@ export async function saveDoctorReport(patientId, reportData, doctorUser) {
         : reportData.prescriptions || '',
       health_status: reportData.healthStatus || 'active',
       follow_up_date: reportData.followUpDate || null,
-      doctor_name: doctorUser
-        ? `${doctorUser.name} (${doctorUser.licenseId})`
-        : 'Consulting Ophthalmologist',
+      doctor_name: docLic ? `${docName} (${docLic})` : docName,
+      doctor_license: docLic,
+      doctor_hospital: docHosp,
     }),
   });
 }

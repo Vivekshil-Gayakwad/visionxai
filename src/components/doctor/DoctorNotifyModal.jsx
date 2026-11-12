@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
 import { usePatients } from '../../context/PatientContext';
+import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { 
   X, 
   MessageSquare, 
   CheckCircle2, 
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export function DoctorNotifyModal({ patient, onClose }) {
   const { notifyPatient } = usePatients();
+  const { currentUser } = useAuth();
   const { t } = useLanguage();
   const [sentSuccess, setSentSuccess] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Dynamic doctor details
+  const doctorName = currentUser?.name || currentUser?.fullName || patient.doctorReport?.doctorName || 'Dr. Arvind Mehra, MS';
+  const doctorLicense = currentUser?.licenseId || patient.doctorReport?.doctorLicense || 'MCI-REG-44912';
+  const doctorSpec = currentUser?.specialization || 'Ophthalmology';
 
   // Clean phone number for WhatsApp
   const cleanPhone = (patient.mobile || '').replace(/\D/g, '');
@@ -24,7 +34,7 @@ export function DoctorNotifyModal({ patient, onClose }) {
 `*VisionXAI Tele-Ophthalmology Screening Report*
 ━━━━━━━━━━━━━━━━━━━━
 Dear *${patient.name}*,
-Your Diabetic Retinopathy screening results have been reviewed and verified by Dr. Arvind Mehra, MS (Ophthalmology).
+Your Diabetic Retinopathy screening results have been reviewed and verified by *${doctorName}* (${doctorLicense}), ${doctorSpec}.
 
 *Diagnostic Summary:*
 • *Diagnosis:* ${patient.doctorReport?.finalDiagnosis || patient.fundusImaging?.stage || 'Moderate NPDR'}
@@ -39,6 +49,12 @@ ${patient.doctorReport?.prescriptions?.slice(0, 2).map((p, i) => `${i+1}. ${p}`)
 ${reportUrl}
 
 For assistance, contact District Tele-Care Helpline: 1800-11-2026`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(reportUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
 
   const handleSendWhatsApp = () => {
     notifyPatient(patient.id, 'whatsapp');
@@ -112,11 +128,20 @@ For assistance, contact District Tele-Care Helpline: 1800-11-2026`;
         </div>
 
         {/* Action Button */}
-        <div>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="w-full sm:w-auto px-4 py-3.5 rounded-xl bg-[#052631] hover:bg-[#0F5E78] border border-[#0F5E78] text-[#FFD166] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedLink ? 'Link Copied!' : 'Copy Sendable Report Link'}</span>
+          </button>
+
           <button
             type="button"
             onClick={handleSendWhatsApp}
-            className="w-full py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+            className="flex-1 w-full py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Launch WhatsApp & Transmit Report</span>
