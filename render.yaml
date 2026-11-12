@@ -1,0 +1,25 @@
+# =============================================================================
+# Render Blueprint Specification for VisionXAI
+# https://render.com/docs/blueprint-spec
+# =============================================================================
+
+services:
+  - type: web
+    name: visionxai
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: oregon
+    numInstances: 1
+    disk:
+      name: visionxai-data
+      mountPath: /app/database
+      sizeGB: 1
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: DATABASE_PATH
+        value: /app/database/visionxai.db
+      - key: CORS_ORIGINS
+        value: "*"

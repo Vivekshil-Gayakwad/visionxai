@@ -1,0 +1,35 @@
+# =============================================================================
+# VisionXAI Docker Compose Configuration
+# Persistent database storage & instant one-command local / production launch
+# =============================================================================
+
+version: '3.8'
+
+services:
+  visionxai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: visionxai:latest
+    container_name: visionxai-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_PATH=/app/database/visionxai.db
+      - CORS_ORIGINS=*
+      - VITE_API_URL=
+    volumes:
+      # Persistent named volume for SQLite database so clinical data persists across container restarts
+      - visionxai_db_data:/app/database
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  visionxai_db_data:
+    driver: local
