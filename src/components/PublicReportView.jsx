@@ -135,7 +135,10 @@ export function PublicReportView({ patientId, onBack }) {
   const asha = patient.ashaRiskAssessment || {};
 
   // Dynamic doctor details
-  const doctorName = doc?.doctorName || doc?.reviewedByDoctor || doc?.doctor_name || 'Dr. Arvind Mehra, MS';
+  let doctorName = doc?.doctorName || doc?.reviewedByDoctor || doc?.doctor_name || 'Dr. Vivek Gayakwad, MS';
+  if (doctorName.includes('Arvind')) {
+    doctorName = 'Dr. Vivek Gayakwad, MS';
+  }
   const doctorLicense = doc?.doctorLicense || doc?.doctor_license || 'MCI-REG-44912';
   const doctorQual = doc?.doctorQualification || 'MS (Ophthalmology)';
   const doctorHosp = patient.hospitalName || doc?.doctorOrganization || 'District Tele-Ophthalmology Hospital';
@@ -330,6 +333,12 @@ export function PublicReportView({ patientId, onBack }) {
                   src={qrCodeUrl} 
                   alt={`QR Code for Patient ${patientId}`} 
                   className="w-16 h-16 rounded-lg bg-white border border-slate-300 p-0.5 object-contain shadow-sm group-hover:scale-105 transition-transform"
+                  onError={(e) => {
+                    if (!e.target.dataset.fallback) {
+                      e.target.dataset.fallback = '1';
+                      e.target.src = `https://quickchart.io/qr?text=${encodeURIComponent(reportUrl)}&size=160`;
+                    }
+                  }}
                 />
               </a>
               <div className="space-y-0.5 text-[11px] text-slate-500">

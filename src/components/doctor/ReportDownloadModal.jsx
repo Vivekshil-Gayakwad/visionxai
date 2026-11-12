@@ -17,7 +17,10 @@ export function ReportDownloadModal({ patient, onClose }) {
   const [downloaded, setDownloaded] = useState(false);
 
   // Dynamic doctor details
-  const doctorName = patient.doctorReport?.doctorName || currentUser?.name || currentUser?.fullName || 'Dr. Arvind Mehra, MS';
+  let doctorName = patient.doctorReport?.doctorName || currentUser?.name || currentUser?.fullName || 'Dr. Vivek Gayakwad, MS';
+  if (doctorName.includes('Arvind')) {
+    doctorName = 'Dr. Vivek Gayakwad, MS';
+  }
   const doctorLicense = patient.doctorReport?.doctorLicense || currentUser?.licenseId || 'MCI-REG-44912';
   const doctorQual = patient.doctorReport?.doctorQualification || currentUser?.qualification || 'MS (Ophthalmology)';
   const doctorHosp = patient.hospitalName || patient.doctorReport?.doctorOrganization || currentUser?.currentOrganization || 'District Tele-Ophthalmology Hospital';
@@ -252,6 +255,12 @@ export function ReportDownloadModal({ patient, onClose }) {
                   src={qrCodeUrl} 
                   alt={`QR Code for Patient ${patient.id}`} 
                   className="w-16 h-16 rounded-lg bg-white border border-slate-300 p-0.5 object-contain shadow-sm group-hover:scale-105 transition-transform"
+                  onError={(e) => {
+                    if (!e.target.dataset.fallback) {
+                      e.target.dataset.fallback = '1';
+                      e.target.src = `https://quickchart.io/qr?text=${encodeURIComponent(reportUrl)}&size=160`;
+                    }
+                  }}
                 />
               </a>
               <div className="space-y-0.5 text-[11px] text-slate-500">

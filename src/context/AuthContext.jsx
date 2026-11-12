@@ -51,7 +51,7 @@ export const DEFAULT_STAFF_ACCOUNTS = {
     email: 'dr.arvind@visionxai.org',
     mobile: '+91 98220 44912',
     password: 'Doctor2026!',
-    name: 'Dr. Arvind Mehra, MS',
+    name: 'Dr. Vivek Gayakwad, MS',
     licenseId: 'MCI-REG-44912',
     role: 'doctor',
     roleTitle: 'Consultant Vitreo-Retinal Surgeon',
@@ -70,7 +70,14 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('visionxai_auth_user_v2');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { return null; }
+      try {
+        const u = JSON.parse(saved);
+        if (u && (u.name === 'Dr. Arvind Mehra, MS' || u.name === 'Dr. Arvind Mehra')) {
+          u.name = 'Dr. Vivek Gayakwad, MS';
+          localStorage.setItem('visionxai_auth_user_v2', JSON.stringify(u));
+        }
+        return u;
+      } catch (e) { return null; }
     }
     return null;
   });

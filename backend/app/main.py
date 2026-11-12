@@ -778,7 +778,9 @@ def view_patient_report_html(patient_id: str, request: Request):
     doc_report = patient.get("doctorReport") or {}
 
     # Extract dynamic doctor details
-    raw_doc_name = doc_report.get("doctor_name") or doc_report.get("reviewedByDoctor") or "Dr. Arvind Mehra, MS"
+    raw_doc_name = doc_report.get("doctor_name") or doc_report.get("reviewedByDoctor") or "Dr. Vivek Gayakwad, MS"
+    if "Arvind" in raw_doc_name:
+        raw_doc_name = "Dr. Vivek Gayakwad, MS"
     if "(" in raw_doc_name and ")" in raw_doc_name:
         doc_display_name = raw_doc_name.split("(")[0].strip()
         doc_license = raw_doc_name.split("(")[1].split(")")[0].strip()
@@ -924,7 +926,7 @@ def view_patient_report_html(patient_id: str, request: Request):
   <div class="footer" style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 18px; border-top: 1px solid #e2e8f0; margin-top: 24px;">
     <div style="display: flex; align-items: center; gap: 12px;">
       <a href="{live_report_url}" target="_blank" title="Scan or click to open live verified report">
-        <img src="{qr_code_url}" alt="QR Verification" style="width: 72px; height: 72px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; background: white;" />
+        <img src="{qr_code_url}" alt="QR Verification" style="width: 72px; height: 72px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; background: white;" onerror="if(!this.dataset.fb){{this.dataset.fb=1;this.src='https://quickchart.io/qr?text={live_report_url}&size=160';}}" />
       </a>
       <div style="font-size: 11px; color: #64748b;">
         <p style="margin: 0; font-weight: bold; color: #073B4C;">Digitally Verified Tele-Health Dossier</p>
@@ -996,5 +998,7 @@ else:
         }
 
 if __name__ == "__main__":
+    import os
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port)

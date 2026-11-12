@@ -69,7 +69,7 @@ District Health Office, ${selectedDistrict} District
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 REPORTING SPECIALIST:
-• Name: ${currentUser?.name || 'Dr. Arvind Mehra, MS'}
+• Name: ${currentUser?.name || 'Dr. Vivek Gayakwad, MS'}
 • Registration No.: ${currentUser?.licenseId || 'MCI-REG-44912'}
 • Hospital / Base Facility: ${currentUser?.currentOrganization || `${selectedTaluka} Sub-District Civil Hospital`}
 • Date & Timestamp: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} at ${new Date().toLocaleTimeString('en-IN')}
@@ -99,7 +99,7 @@ ${comparativeTalukas.map(ct => `• ${ct.talukaName.padEnd(16, ' ')}: ${ct.drRat
 3. Conduct intensive glycemic control & dilated eye exam camps in high-risk rural wards.
 
 Submitted by:
-${currentUser?.name || 'Dr. Arvind Mehra, MS (Ophthalmology)'}
+${currentUser?.name || 'Dr. Vivek Gayakwad, MS (Ophthalmology)'}
 Consultant Vitreo-Retinal Surgeon & Tele-Ophthalmology Officer
 VisionXAI Surveillance Network, Government of Maharashtra`;
 

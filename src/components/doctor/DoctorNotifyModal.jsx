@@ -22,8 +22,11 @@ export function DoctorNotifyModal({ patient, onClose }) {
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Dynamic doctor details
-  const doctorName = currentUser?.name || currentUser?.fullName || patient.doctorReport?.doctorName || 'Dr. Arvind Mehra, MS';
-  const doctorLicense = currentUser?.licenseId || patient.doctorReport?.doctorLicense || 'MCI-REG-44912';
+  let doctorName = patient.doctorReport?.doctorName || currentUser?.name || currentUser?.fullName || 'Dr. Vivek Gayakwad, MS';
+  if (doctorName.includes('Arvind')) {
+    doctorName = 'Dr. Vivek Gayakwad, MS';
+  }
+  const doctorLicense = patient.doctorReport?.doctorLicense || currentUser?.licenseId || 'MCI-REG-44912';
   const doctorSpec = currentUser?.specialization || 'Ophthalmology';
 
   // Clean phone number for WhatsApp

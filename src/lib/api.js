@@ -272,9 +272,12 @@ export async function removeFundus(patientId) {
  * Save doctor's clinical report
  */
 export async function saveDoctorReport(patientId, reportData, doctorUser) {
-  const docName = doctorUser?.name || doctorUser?.fullName || 'Consulting Ophthalmologist';
-  const docLic = doctorUser?.licenseId || doctorUser?.license_id || 'MCI-REG-44912';
-  const docHosp = doctorUser?.currentOrganization || '';
+  let docName = reportData?.doctorName || doctorUser?.name || doctorUser?.fullName || 'Dr. Vivek Gayakwad, MS';
+  if (docName.includes('Arvind')) {
+    docName = 'Dr. Vivek Gayakwad, MS';
+  }
+  const docLic = reportData?.doctorLicense || doctorUser?.licenseId || doctorUser?.license_id || 'MCI-REG-44912';
+  const docHosp = reportData?.doctorHospital || doctorUser?.currentOrganization || 'District Tele-Ophthalmology Hospital';
 
   return apiFetch(`/api/patients/${patientId}/report`, {
     method: 'POST',

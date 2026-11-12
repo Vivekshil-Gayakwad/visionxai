@@ -247,9 +247,9 @@ def init_db():
         ),
         (
             "usr_doctor_default",
-            "dr.arvind@visionxai.org",
+            "dr.vivek@visionxai.org",
             "+91 98220 44912",
-            "Dr. Arvind Mehra, MS",
+            "Dr. Vivek Gayakwad, MS",
             "doctor",
             "MCI-REG-44912",
             "Maharashtra",
@@ -269,13 +269,20 @@ def init_db():
 
     for prof in seed_profiles:
         cursor.execute("""
-        INSERT OR IGNORE INTO profiles (
+        INSERT OR REPLACE INTO profiles (
             id, email, mobile, full_name, role, license_id, state, qualification,
             specialization, current_organization, organization_address,
             experience_years, id_card_url, profile_photo_url, password_hash,
             is_verified, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, prof)
+
+    # Automatic migration: update existing database rows to Dr. Vivek Gayakwad
+    try:
+        cursor.execute("UPDATE profiles SET full_name = 'Dr. Vivek Gayakwad, MS', email = 'dr.vivek@visionxai.org' WHERE id = 'usr_doctor_default' OR full_name LIKE '%Arvind Mehra%'")
+        cursor.execute("UPDATE dr_reports SET doctor_name = 'Dr. Vivek Gayakwad, MS' WHERE doctor_name LIKE '%Arvind Mehra%'")
+    except Exception:
+        pass
 
     conn.commit()
     conn.close()

@@ -282,10 +282,13 @@ export function PatientProvider({ children }) {
 
   // 6. Doctor: Edit and Finalize Report & Status
   const saveDoctorReport = async (patientId, reportData, doctorUser) => {
-    const docName = doctorUser?.name || doctorUser?.fullName || 'Dr. Arvind Mehra, MS';
-    const docLic = doctorUser?.licenseId || doctorUser?.license_id || 'MCI-REG-44912';
+    let docName = reportData?.doctorName || doctorUser?.name || doctorUser?.fullName || 'Dr. Vivek Gayakwad, MS';
+    if (docName.includes('Arvind')) {
+      docName = 'Dr. Vivek Gayakwad, MS';
+    }
+    const docLic = reportData?.doctorLicense || doctorUser?.licenseId || doctorUser?.license_id || 'MCI-REG-44912';
     const docQual = doctorUser?.qualification || 'MS (Ophthalmology)';
-    const docOrg = doctorUser?.currentOrganization || 'Khandala Sub-District Civil Hospital';
+    const docOrg = reportData?.doctorHospital || doctorUser?.currentOrganization || 'District Tele-Ophthalmology Hospital';
 
     const updatedReport = {
       reviewedByDoctor: `${docName} (${docLic})`,
