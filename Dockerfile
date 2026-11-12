@@ -16,7 +16,6 @@ RUN npm ci || npm install
 # Copy frontend source files
 COPY index.html vite.config.js tailwind.config.js postcss.config.js ./
 COPY src/ ./src/
-COPY public/ ./public/
 
 # Build static SPA assets into /app/dist
 RUN npm run build
