@@ -29,6 +29,10 @@ scratch/
 notebooks/.ipynb_checkpoints/
 datasets/
 
+# Test datasets (local testing only, not needed in production)
+ai/datasets/
+public/test_retinal_images/
+
 # Local databases (don't bake local dev database into the base image)
 database/*.db
 database/*.db-journal
