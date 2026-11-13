@@ -347,44 +347,43 @@ Explainable-AI/
 - **`src/App.jsx`**: Added `/report/:patientId` public route rendering `PublicReportView`.
 - **`PublicReportView.jsx`**: Renders full clinical report without authentication, accessible via public URL.
 
-#### Test Retinal Images (100 Synthetic Fundus Images)
-- **`ai/datasets/retinal_images/normal/`**: 50 normal fundus JPGs (512×512) with proper optical characteristics (red-channel dominant, circular aperture vignetting, optic disc, vascular arcades, fovea).
-- **`ai/datasets/retinal_images/dr/`**: 50 DR fundus JPGs (512×512):
-  - 15 Mild NPDR (Grade 1) — scattered microaneurysms
-  - 15 Moderate NPDR (Grade 2) — dot-blot hemorrhages + hard exudates
-  - 10 Severe NPDR (Grade 3) — flame hemorrhages + cotton-wool spots
-  - 10 Proliferative DR (Grade 4) — neovascularization + vitreous hemorrhage
-- **`ai/datasets/retinal_images/metadata.csv`**: Full clinical annotations (filename, grade, probability, description).
+#### Test Retinal Images (100 Real Clinical Fundus Images)
+- **`ai/datasets/retinal_images/normal/`**: 50 REAL clinical normal fundus photographs (1000×1000 px JPEG).
+- **`ai/datasets/retinal_images/dr/`**: 50 REAL clinical Diabetic Retinopathy photographs (1000×1000 px JPEG):
+  - 30 Non-Proliferative Diabetic Retinopathy (NPDR) — Grade 2
+  - 20 Proliferative Diabetic Retinopathy (PDR) — Grade 4
+- **Source**: Translational Visual Health Laboratory `OCT-AND-EYE-FUNDUS-DATASET` on GitHub (no synthetic images).
+- **`ai/datasets/retinal_images/metadata.csv`**: Full clinical annotations mapping original hospital scan names to categories and grades.
 - **`ai/datasets/retinal_images/README.md`**: Dataset documentation.
-- **`public/test_retinal_images/`**: Duplicate copies for frontend access with `manifest.json`.
-- **Verified**: Backend `analyze_retinal_fundus_multimodal` correctly classifies normal images as Grade 0 (3.8% probability) and DR images as Grade 2 (92% probability). `validate_retinal_fundus_image` passes both categories.
-- **Excluded from Docker**: Added `ai/datasets/` and `public/test_retinal_images/` to `.dockerignore` (testing only, not needed in production).
+- **`public/test_retinal_images/`**: Duplicate copies for frontend testing with `manifest.json`.
+- **Verified**: Backend `analyze_retinal_fundus_multimodal` and strict 9-point `validate_retinal_fundus_image` pass genuine clinical images.
+- **Excluded from Docker**: Added `ai/datasets/` and `public/test_retinal_images/` to `.dockerignore` (testing only, keeps production image lean).
 
 ---
 
-## 8. Synthetic Retinal Test Image Dataset
+## 8. Real Clinical Retinal Test Image Dataset
 
 ### Location
-- **Backend/AI**: `ai/datasets/retinal_images/` (100 images + metadata + README)
-- **Frontend**: `public/test_retinal_images/` (100 images + manifest.json)
+- **Backend/AI**: `ai/datasets/retinal_images/` (100 real images + metadata + README)
+- **Frontend**: `public/test_retinal_images/` (100 real images + manifest.json)
+
+### Source
+- **Repository**: [Translational Visual Health Laboratory - OCT & Eye Fundus Dataset](https://github.com/Traslational-Visual-Health-Laboratory/OCT-AND-EYE-FUNDUS-DATASET)
+- **Real Medical Scans**: 1000×1000 pixels JPEG, clinical fundus camera captures
+- **Diagnostics**: Derived from `EYE FUNDUS.csv` ophthalmological evaluation
 
 ### Distribution
 | Category | Count | Grade | Description |
 |----------|-------|-------|-------------|
-| Normal | 50 | 0 | Clean fundus, no lesions |
-| Mild NPDR | 15 | 1 | Scattered microaneurysms |
-| Moderate NPDR | 15 | 2 | Dot-blot hemorrhages + hard exudates |
-| Severe NPDR | 10 | 3 | Flame hemorrhages + cotton-wool spots |
-| Proliferative DR | 10 | 4 | Neovascularization + vitreous hemorrhage |
+| Normal (No DR) | 50 | 0 | Healthy retina, clear macula and vessels, no lesions |
+| NPDR | 30 | 2 | Non-Proliferative Diabetic Retinopathy (microaneurysms, hemorrhages) |
+| PDR | 20 | 4 | Proliferative Diabetic Retinopathy (neovascularization, vitreous involvement) |
+| **Total** | **100** | | Real clinical fundus photographs |
 
-### Optical Properties (Pass 9-Point Validator)
-- Red-channel dominant intensity (retinal fundus characteristic)
-- Circular aperture vignetting (camera optics simulation)
-- Optic disc (bright nasal region)
-- Vascular arcade branching patterns
-- Fovea (central dark depression)
-- Proper color distribution (warm reds/oranges, no blues/greens)
-- Resolution: 512×512 pixels, JPEG format
+### Optical Properties
+- Real clinical fundus camera optics (1000×1000 px)
+- Fully compliant with the 9-point optical validator (`validate_retinal_fundus_image` returns `True`)
+- Seamlessly processes through EfficientNet-B3 ONNX model + Grad-CAM generation
 
 ---
 
