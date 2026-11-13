@@ -14,7 +14,7 @@ import xgboost as xgb
 import shap
 import joblib
 
-BASE_DIR = r"C:\Users\Vivek\OneDrive\Documents\2nd-Year(1st sem)\EDI-Project\Explainable-AI"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "ai", "datasets", "tabular")
 MODEL_DIR = os.path.join(BASE_DIR, "ai", "models")
 os.makedirs(DATA_DIR, exist_ok=True)
